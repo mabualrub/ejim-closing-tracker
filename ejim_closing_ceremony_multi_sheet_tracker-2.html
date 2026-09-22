@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EJIM Closing Ceremony - Multi-Sheet Task Tracker</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- SheetJS for multi-sheet XLSX export compatible with Google Sheets -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- Phosphor Icons CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+    
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+    
+    .code-font {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Custom scrollbar for spreadsheet view */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Subtle row transitions */
+    tr {
+      transition: background-color 0.15s ease;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-slate-100">
+
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+          <i class="ph ph-file-xls text-2xl"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-lg font-bold text-slate-900 tracking-tight">EJIM Closing Ceremony Operations</h1>
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800">
+              Google Sheets Ready
+            </span>
+          </div>
+          <p class="text-xs text-slate-500">Mohammad &amp; Sara Dedicated Scope • 8 Individual Workstream Sheets</p>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="flex items-center flex-wrap gap-2.5">
+        <button onclick="openAddTaskModal()" class="inline-flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold shadow-sm transition-all">
+          <i class="ph ph-plus-circle text-base"></i>
+          <span>Add Task</span>
+        </button>
+        <button id="btnExportXlsx" onclick="exportWorkbook()" class="inline-flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-lg text-xs font-medium shadow-sm transition-all">
+          <i class="ph ph-download-simple text-base"></i>
+          <span>Export Multi-Sheet (.xlsx)</span>
+        </button>
+        <button onclick="switchTab('apps-script')" class="inline-flex items-center space-x-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3.5 py-2 rounded-lg text-xs font-medium transition-all">
+          <i class="ph ph-google-chrome-logo text-base"></i>
+          <span>Google Apps Script Code</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div class="flex items-center space-x-2 overflow-x-auto py-1">
+        <span class="text-slate-500 font-medium">Filter Assignee:</span>
+        <button onclick="setPersonFilter('ALL')" id="filter-ALL" class="filter-btn px-2.5 py-1 rounded-md font-semibold bg-slate-900 text-white">All (<span id="count-ALL">42</span>)</button>
+        <button onclick="setPersonFilter('Mohammad')" id="filter-Mohammad" class="filter-btn px-2.5 py-1 rounded-md font-medium text-slate-600 hover:bg-slate-100">Mohammad (<span id="count-Mohammad">36</span>)</button>
+        <button onclick="setPersonFilter('Sara')" id="filter-Sara" class="filter-btn px-2.5 py-1 rounded-md font-medium text-slate-600 hover:bg-slate-100">Sara (<span id="count-Sara">10</span>)</button>
+        <button onclick="setPersonFilter('Joint')" id="filter-Joint" class="filter-btn px-2.5 py-1 rounded-md font-medium text-slate-600 hover:bg-slate-100">Joint Direct (<span id="count-Joint">3</span>)</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div class="flex items-center space-x-2 overflow-x-auto py-1">
+        <span class="text-slate-500 font-medium">Filter Assignee:</span>
+        <button onclick="setPersonFilter('ALL')" id="filter-ALL" class="filter-btn px-2.5 py-1 rounded-md font-semibold bg-slate-900 text-white">All</button>
+        <button onclick="setPersonFilter('Mohammad')" id="filter-Mohammad" class="filter-btn px-2.5 py-1 rounded-md font-medium text-slate-600 hover:bg-slate-100">Mohammad (36)</button>
+        <button onclick="setPersonFilter('Sara')" id="filter-Sara" class="filter-btn px-2.5 py-1 rounded-md font-medium text-slate-600 hover:bg-slate-100">Sara (10)</button>
+        <button onclick="setPersonFilter('Joint')" id="filter-Joint" class="filter-btn px-2.5 py-1 rounded-md font-medium text-slate-600 hover:bg-slate-100">Joint Direct (3)</button>
+      </div>
+
+      <div class="flex items-center space-x-3 text-slate-600">
+        <label class="inline-flex items-center space-x-1.5 cursor-pointer select-none">
+          <input type="checkbox" id="chkHighlightDuplicates" checked onchange="renderActiveSheet()" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500" />
+          <span class="font-medium">Highlight Redundancies</span>
+        </label>
+        <span class="text-slate-300">|</span>
+        <div class="flex items-center space-x-1">
+          <span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span>
+          <span class="text-rose-700 font-medium">6 Duplicates Identified</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-slate-200/80 border-b border-slate-300 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto flex space-x-1 overflow-x-auto no-scrollbar pt-2">
+      <button onclick="switchTab('master')" id="tab-master" class="tab-btn px-3.5 py-2 text-xs font-semibold rounded-t-lg bg-white text-slate-900 shadow-sm border-t border-x border-slate-300 flex items-center space-x-1.5">
+        <i class="ph ph-squares-four text-sm"></i>
+        <span>0. Master Chronological</span>
+        <span class="ml-1 text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-full font-bold">42</span>
+      </button>
+
+      <button onclick="switchTab('g1')" id="tab-g1" class="tab-btn px-3 py-2 text-xs font-medium rounded-t-lg text-slate-600 hover:text-slate-900 border-t border-x border-transparent flex items-center space-x-1.5">
+        <span class="w-2 h-2 rounded-full bg-sky-500 inline-block"></span>
+        <span>1. Branding</span>
+        <span class="text-[10px] bg-sky-100 text-sky-800 px-1 py-0.2 rounded font-bold">3</span>
+      </button>
+
+      <button onclick="switchTab('g2')" id="tab-g2" class="tab-btn px-3 py-2 text-xs font-medium rounded-t-lg text-slate-600 hover:text-slate-900 border-t border-x border-transparent flex items-center space-x-1.5">
+        <span class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span>
+        <span>2. Invitations</span>
+        <span class="text-[10px] bg-amber-100 text-amber-800 px-1 py-0.2 rounded font-bold">2</span>
+      </button>
+
+      <button onclick="switchTab('g3')" id="tab-g3" class="tab-btn px-3 py-2 text-xs font-medium rounded-t-lg text-slate-600 hover:text-slate-900 border-t border-x border-transparent flex items-center space-x-1.5">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+        <span>3. Program & Media</span>
+        <span class="text-[10px] bg-emerald-100 text-emerald-800 px-1 py-0.2 rounded font-bold">3</span>
+      </button>
+
+      <button onclick="switchTab('g4')" id="tab-g4" class="tab-btn px-3 py-2 text-xs font-medium rounded-t-lg text-slate-600 hover:text-slate-900 border-t border-x border-transparent flex items-center space-x-1.5">
+        <span class="w-2 h-2 rounded-full bg-purple-500 inline-block"></span>
+        <span>4. Production & Print</span>
+        <span class="text-[10px] bg-purple-100 text-purple-800 px-1 py-0.2 rounded font-bold">15</span>
+      </button>
+
+      <button onclick="switchTab('g5')" id="tab-g5" class="tab-btn px-3 py-2 text-xs font-medium rounded-t-lg text-slate-600 hover:text-slate-900 border-t border-x border-transparent flex items-center space-x-1.5">
+        <span class="w-2 h-2 rounded-full bg-orange-500 inline-block"></span>
+        <span>5. Receiving & QA</span>
+        <span class="text-[10px] bg-orange-100 text-orange-800 px-1 py-0.2 rounded font-bold">5</span>
+      </button>
+
+      <button onclick="switchTab('g6')" id="tab-g6" class="tab-btn px-3 py-2 text-xs font-medium rounded-t-lg text-slate-600 hover:text-slate-900 border-t border-x border-transparent flex items-center space-x-1.5">
+        <span class="w-2 h-2 rounded-full bg-cyan-500 inline-block"></span>
+        <span>6. Venue & AV</span>
+        <span class="text-[10px] bg-cyan-100 text-cyan-800 px-1 py-0.2 rounded font-bold">8</span>
+      </button>
+
+      <button onclick="switchTab('g7')" id="tab-g7" class="tab-btn px-3 py-2 text-xs font-medium rounded-t-lg text-slate-600 hover:text-slate-900 border-t border-x border-transparent flex items-center space-x-1.5">
+        <span class="w-2 h-2 rounded-full bg-pink-500 inline-block"></span>
+        <span>7. Registration</span>
+        <span class="text-[10px] bg-pink-100 text-pink-800 px-1 py-0.2 rounded font-bold">4</span>
+      </button>
+
+      <button onclick="switchTab('g8')" id="tab-g8" class="tab-btn px-3 py-2 text-xs font-medium rounded-t-lg text-slate-600 hover:text-slate-900 border-t border-x border-transparent flex items-center space-x-1.5">
+        <span class="w-2 h-2 rounded-full bg-slate-500 inline-block"></span>
+        <span>8. Close-Out</span>
+        <span class="text-[10px] bg-slate-200 text-slate-800 px-1 py-0.2 rounded font-bold">2</span>
+      </button>
+    </div>
+  </div>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+    
+    <!-- Table Sheet Container -->
+    <div id="spreadsheetView" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+      <!-- Sheet Info Banner -->
+      <div id="sheetBanner" class="p-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 bg-slate-50">
+        <div>
+          <h2 id="sheetTitle" class="text-sm font-bold text-slate-900">0. Master Chronological Tracker</h2>
+          <p id="sheetSubtitle" class="text-xs text-slate-500 mt-0.5">Comprehensive view of all 42 deliverables across Mohammad and Sara.</p>
+        </div>
+        <div id="sheetStats" class="flex items-center space-x-2 text-xs">
+          <!-- Dynamically populated stats -->
+        </div>
+      </div>
+
+      <!-- Table View -->
+      <div class="overflow-x-auto max-h-[68vh]">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead class="bg-slate-100 text-slate-700 font-semibold sticky top-0 border-b border-slate-200 shadow-sm z-10">
+            <tr>
+              <th class="py-2.5 px-3 w-12 text-center">#</th>
+              <th class="py-2.5 px-3 w-36">Workstream</th>
+              <th class="py-2.5 px-4 min-w-[240px]">Deliverable &amp; Task Description</th>
+              <th class="py-2.5 px-3 w-32">Main Resp.</th>
+              <th class="py-2.5 px-3 w-32">Support</th>
+              <th class="py-2.5 px-3 w-28">Deadline</th>
+              <th class="py-2.5 px-3 w-28">Status</th>
+              <th class="py-2.5 px-4 min-w-[260px]">Specifications, Items &amp; Operational Notes</th>
+              <th class="py-2.5 px-3 w-24 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody" class="divide-y divide-slate-200 bg-white font-normal text-slate-700">
+            <!-- Dynamically populated rows -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Table Footer / Google Sheet Import Guide -->
+      <div class="p-3 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+        <div class="flex items-center space-x-2">
+          <i class="ph ph-info text-blue-600 text-sm"></i>
+          <span>Clicking <strong>Export Multi-Sheet (.xlsx)</strong> creates a workbook with 9 separate worksheets that opens natively in Google Sheets.</span>
+        </div>
+        <div class="text-[11px] text-slate-400">
+          Showing <span id="displayedCount" class="font-bold text-slate-700">0</span> tasks
+        </div>
+      </div>
+    </div>
+
+    <div id="appsScriptView" class="hidden bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-base font-bold text-slate-900">Direct Google Apps Script (One-Click Drive Creator)</h2>
+          <p class="text-xs text-slate-500 mt-1">If you prefer creating the spreadsheet directly inside your Google Drive without uploading a file, copy and run this script.</p>
+        </div>
+        <button onclick="copyAppsScript()" id="btnCopyScript" class="inline-flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-all shadow-sm">
+          <i class="ph ph-copy"></i>
+          <span>Copy Script Code</span>
+        </button>
+      </div>
+
+      <div class="bg-slate-900 rounded-lg p-4 text-emerald-400 code-font text-xs overflow-x-auto max-h-[55vh]">
+        <pre id="appsScriptPre"><code>// Google Apps Script: Creates "EJIM Closing Ceremony Master Tracker" with 9 Worksheets
+function createEJIMTrackingSheet() {
+  var ss = SpreadsheetApp.create("EJIM Closing Ceremony Master Task & Item Tracker");
+  var sheetsData = [
+    { name: "Master Schedule", color: "#1e293b" },
+    { name: "1. Branding & Identity", color: "#0284c7" },
+    { name: "2. Invitations & Copy", color: "#d97706" },
+    { name: "3. Program & Media", color: "#059669" },
+    { name: "4. Production & Shaaban", color: "#7c3aed" },
+    { name: "5. Receiving & Inventory", color: "#ea580c" },
+    { name: "6. Venue & AV Engineering", color: "#0891b2" },
+    { name: "7. Registration Desk", color: "#db2777" },
+    { name: "8. Close-out & Reporting", color: "#475569" }
+  ];
+
+  var defaultSheet = ss.getActiveSheet();
+  defaultSheet.setName(sheetsData[0].name);
+  defaultSheet.setTabColor(sheetsData[0].color);
+
+  for (var i = 1; i < sheetsData.length; i++) {
+    var sh = ss.insertSheet(sheetsData[i].name);
+    sh.setTabColor(sheetsData[i].color);
+  }
+
+  Logger.log("Created successfully at: " + ss.getUrl());
+}</code></pre>
+      </div>
+
+      <div class="p-3.5 bg-amber-50 rounded-lg border border-amber-200 text-xs text-amber-900 space-y-1">
+        <p class="font-semibold flex items-center space-x-1.5">
+          <i class="ph ph-lightning text-amber-600 text-sm"></i>
+          <span>How to use in 30 seconds:</span>
+        </p>
+        <ol class="list-decimal list-inside pl-1 space-y-0.5 text-amber-800">
+          <li>Visit <a href="https://script.new" target="_blank" class="underline font-bold text-amber-900">script.new</a> in your browser.</li>
+          <li>Paste the code above into the script editor.</li>
+          <li>Click <strong>Run</strong> (grant standard Drive permission once). The new multi-sheet document will appear right in your Google Drive!</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- Task Add / Edit Modal -->
+    <div id="taskModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full border border-slate-200 overflow-hidden transform transition-all">
+        <div class="bg-slate-900 px-6 py-4 flex items-center justify-between text-white">
+          <div class="flex items-center space-x-2.5">
+            <div id="modalIconContainer" class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-lg">
+              <i id="modalIcon" class="ph ph-plus-bold"></i>
+            </div>
+            <div>
+              <h3 id="modalTitle" class="text-sm font-bold">Add New Task</h3>
+              <p class="text-[11px] text-slate-400">Configure deliverable specs, assignment &amp; workstream</p>
+            </div>
+          </div>
+          <button type="button" onclick="closeTaskModal()" class="text-slate-400 hover:text-white rounded-lg p-1 transition-colors">
+            <i class="ph ph-x text-lg"></i>
+          </button>
+        </div>
+
+        <form id="taskForm" onsubmit="handleTaskFormSubmit(event)" class="p-6 space-y-4 text-xs">
+          <input type="hidden" id="formTaskId" value="" />
+          
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Task ID / Number</label>
+              <input type="number" id="formIdNum" required min="1" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g. 85" />
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block font-semibold text-slate-700 mb-1">Workstream Sheet Group</label>
+              <select id="formGroup" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                <option value="g1">1. Branding &amp; Identity</option>
+                <option value="g2">2. Invitations &amp; Copywriting</option>
+                <option value="g3">3. Program &amp; Media Content</option>
+                <option value="g4">4. Production &amp; Print Procurement (Shaaban)</option>
+                <option value="g5">5. Receiving, Inventory &amp; Packing</option>
+                <option value="g6">6. Venue &amp; AV Engineering</option>
+                <option value="g7">7. Registration Desk &amp; Attendance</option>
+                <option value="g8">8. Event Wrap-Up &amp; Reporting</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Deliverable / Task Title</label>
+            <input type="text" id="formTaskTitle" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g. Finalize VIP welcome seating tags" />
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Main Responsible</label>
+              <input type="text" id="formMain" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Mohammad / Sara / Dana / etc." />
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Support Person</label>
+              <input type="text" id="formSupport" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Sara / Mohammad / Venue / —" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Deadline / Timing</label>
+              <input type="text" id="formDeadline" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g. 9-Oct (14:00)" />
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Status</label>
+              <select id="formStatus" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                <option value="Not started">Not started</option>
+                <option value="In Progress">In Progress</option>
+                <option value="In Fabrication">In Fabrication</option>
+                <option value="Pending">Pending</option>
+                <option value="Completed">Completed</option>
+                <option value="Duplicate">Duplicate / Redundant</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">Deliverable Output</label>
+              <input type="text" id="formDeliverable" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g. Ready prints" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Specifications, Quantities &amp; Operational Notes</label>
+            <textarea id="formNotes" rows="2" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" placeholder="Provide dimensions, materials, or operational guidance..."></textarea>
+          </div>
+
+          <div class="bg-rose-50 border border-rose-200 rounded-lg p-3 space-y-2">
+            <label class="inline-flex items-center space-x-2 cursor-pointer">
+              <input type="checkbox" id="formIsDuplicate" onchange="toggleDuplicateNoteField()" class="rounded border-rose-300 text-rose-600 focus:ring-rose-500" />
+              <span class="font-semibold text-rose-900">Mark as Duplicate / Redundant</span>
+            </label>
+            <div id="duplicateNoteContainer" class="hidden">
+              <input type="text" id="formDuplicateNote" class="w-full rounded-md border border-rose-300 bg-white px-2.5 py-1.5 text-xs text-rose-900 placeholder:text-rose-400 focus:outline-none focus:ring-1 focus:ring-rose-500" placeholder="Reason for redundancy / consolidated task target..." />
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-slate-200 flex items-center justify-end space-x-2">
+            <button type="button" onclick="closeTaskModal()" class="px-4 py-2 rounded-lg border border-slate-300 font-medium text-slate-700 hover:bg-slate-100 transition-colors">
+              Cancel
+            </button>
+            <button type="submit" id="btnSubmitTask" class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-sm transition-all flex items-center space-x-1.5">
+              <i class="ph ph-floppy-disk text-sm"></i>
+              <span>Save Task</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal (No Browser Dialogs) -->
+    <div id="deleteModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full border border-slate-200 p-5 text-center space-y-4">
+        <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto text-2xl">
+          <i class="ph ph-trash"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold text-slate-900">Delete Deliverable Task?</h3>
+          <p id="deleteModalText" class="text-xs text-slate-500 mt-1">Are you sure you want to remove this item? This action will update all worksheets.</p>
+        </div>
+        <div class="flex items-center justify-center space-x-2 pt-2">
+          <button type="button" onclick="closeDeleteModal()" class="w-1/2 py-2 rounded-lg border border-slate-300 font-medium text-slate-700 hover:bg-slate-100 transition-colors text-xs">
+            Cancel
+          </button>
+          <button type="button" onclick="executeDeleteTask()" class="w-1/2 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-semibold transition-all shadow-sm text-xs flex items-center justify-center space-x-1">
+            <i class="ph ph-trash-simple text-sm"></i>
+            <span>Confirm Delete</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toastNotification" class="fixed bottom-5 right-5 z-50 transform translate-y-12 opacity-0 pointer-events-none transition-all duration-300 flex items-center space-x-2 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-lg text-xs font-medium border border-slate-700">
+      <i id="toastIcon" class="ph ph-check-circle text-emerald-400 text-base"></i>
+      <span id="toastMsg">Action completed successfully</span>
+    </div>
+
+  </main>
+
+  <script>
+    const GROUPS = {
+      g1: {
+        id: 'g1',
+        title: 'Group 1: Branding & Identity',
+        badge: 'Branding',
+        bgHeader: 'bg-sky-50',
+        textColor: 'text-sky-900',
+        badgeBg: 'bg-sky-100 text-sky-800 border-sky-300',
+        colorHex: '0284c7',
+        desc: 'Logo vector approvals, visibility guidelines, and branding compliance sign-off.'
+      },
+      g2: {
+        id: 'g2',
+        title: 'Group 2: Invitations & Copywriting',
+        badge: 'Invitations',
+        bgHeader: 'bg-amber-50',
+        textColor: 'text-amber-900',
+        badgeBg: 'bg-amber-100 text-amber-800 border-amber-300',
+        colorHex: 'd97706',
+        desc: 'Graduate & company text drafting and print/digital card design.'
+      },
+      g3: {
+        id: 'g3',
+        title: 'Group 3: Program & Media Content',
+        badge: 'Program & Media',
+        bgHeader: 'bg-emerald-50',
+        textColor: 'text-emerald-900',
+        badgeBg: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+        colorHex: '059669',
+        desc: 'Ceremony agenda run-of-show, LED screen decks, and speaker video loops.'
+      },
+      g4: {
+        id: 'g4',
+        title: 'Group 4: Production & Print Procurement (Shaaban)',
+        badge: 'Production & Print',
+        bgHeader: 'bg-purple-50',
+        textColor: 'text-purple-900',
+        badgeBg: 'bg-purple-100 text-purple-800 border-purple-300',
+        colorHex: '7c3aed',
+        desc: 'Fabrication of plaques, embossed certificates, banners, desk signage, and VIP gifts.'
+      },
+      g5: {
+        id: 'g5',
+        title: 'Group 5: Receiving, Inventory & Packing',
+        badge: 'Receiving & QA',
+        bgHeader: 'bg-orange-50',
+        textColor: 'text-orange-900',
+        badgeBg: 'bg-orange-100 text-orange-800 border-orange-300',
+        colorHex: 'ea580c',
+        desc: 'Delivery inspection, physical quantity audit against TOR, and packing into event kits.'
+      },
+      g6: {
+        id: 'g6',
+        title: 'Group 6: Venue & AV Engineering',
+        badge: 'Venue & AV',
+        bgHeader: 'bg-cyan-50',
+        textColor: 'text-cyan-900',
+        badgeBg: 'bg-cyan-100 text-cyan-800 border-cyan-300',
+        colorHex: '0891b2',
+        desc: 'Stage configuration, hotel LED screens (8x4m & pillars), sound systems, and tech runs.'
+      },
+      g7: {
+        id: 'g7',
+        title: 'Group 7: Registration Desk & Attendance',
+        badge: 'Registration',
+        bgHeader: 'bg-pink-50',
+        textColor: 'text-pink-900',
+        badgeBg: 'bg-pink-100 text-pink-800 border-pink-300',
+        colorHex: 'db2777',
+        desc: 'Badge distribution, QR code check-in signage, guest welcome, and attendance logs.'
+      },
+      g8: {
+        id: 'g8',
+        title: 'Group 8: Event Wrap-Up & Reporting',
+        badge: 'Wrap-Up',
+        bgHeader: 'bg-slate-100',
+        textColor: 'text-slate-900',
+        badgeBg: 'bg-slate-200 text-slate-800 border-slate-300',
+        colorHex: '475569',
+        desc: 'LED tear-down supervision, supplier wrap-up, and final technical debrief report.'
+      }
+    };
+
+    let TASKS_DATA = [
+      // GROUP 1: Branding & Identity
+      {
+        id: 32, group: 'g1', workstream: 'Branding',
+        task: 'Confirm EJIM/NGO/GJU logos and branding requirements',
+        main: 'Mohammad', support: 'Sara', deadline: 'ASAP', deliverable: 'Branding package',
+        status: 'In Progress', isDuplicate: false, duplicateNote: '',
+        notes: 'Finalize approved vector logos (.ai, .eps, .svg) and official color palettes across all 3 partner organizations.'
+      },
+      {
+        id: 33, group: 'g1', workstream: 'Branding',
+        task: 'Confirm branding/visibility requirements for all materials',
+        main: 'Mohammad', support: 'Sara', deadline: 'Before production', deliverable: 'Branding checklist',
+        status: 'In Progress', isDuplicate: false, duplicateNote: '',
+        notes: 'Prepare sizing matrix, safe print margins, co-branding guidelines for print items and stage screen visuals.'
+      },
+      {
+        id: 34, group: 'g1', workstream: 'Branding',
+        task: 'Ensure all designs comply with branding requirements',
+        main: 'Mohammad', support: 'Sara', deadline: 'Before approval', deliverable: 'Compliant artwork',
+        status: 'In Progress', isDuplicate: false, duplicateNote: '',
+        notes: 'Quality control sign-off step before any digital artwork is released to vendor Shaaban for printing.'
+      },
+
+      // GROUP 2: Invitations & Copywriting
+      {
+        id: 15, group: 'g2', workstream: 'Invitations',
+        task: 'Prepare graduate and company invitation content',
+        main: 'Leen', support: 'Sara', deadline: 'Before design', deliverable: 'Final text',
+        status: 'In Progress', isDuplicate: false, duplicateNote: '',
+        notes: 'Sara collaborates with Leen on drafting bilingual Arabic & English wording and formal VIP protocols.'
+      },
+      {
+        id: 17, group: 'g2', workstream: 'Invitations',
+        task: 'Design graduate, company and EJIM team invitations',
+        main: 'Mohammad', support: '—', deadline: 'Before sending', deliverable: 'Approved design',
+        status: 'In Progress', isDuplicate: false, duplicateNote: '',
+        notes: 'Mohammad creates digital e-invite cards for WhatsApp/email as well as luxury print-ready cards.'
+      },
+
+      // GROUP 3: Program & Media Content
+      {
+        id: 60, group: 'g3', workstream: 'Program',
+        task: 'Finalize ceremony agenda',
+        main: 'Sara', support: '—', deadline: 'Before event', deliverable: 'Final agenda',
+        status: 'Completed', isDuplicate: false, duplicateNote: '',
+        notes: 'Master program timing, opening speeches, keynote slots, certificate rollouts, and closing photo sessions.'
+      },
+      {
+        id: 55, group: 'g3', workstream: 'AV Content',
+        task: 'Prepare presentations/videos for screen',
+        main: 'Mohammad', support: '—', deadline: 'Before event', deliverable: 'Final media',
+        status: 'In Progress', isDuplicate: false, duplicateNote: '',
+        notes: 'Build 16:9 and custom LED resolution slide decks, partner background loops, video clips, and graduate roster slides.'
+      },
+      {
+        id: 62, group: 'g3', workstream: 'Program',
+        task: 'Coordinate presentations/videos',
+        main: 'Dr. Ziad', support: 'Mohammad', deadline: 'Before event', deliverable: 'Final content',
+        status: 'Duplicate', isDuplicate: true, duplicateNote: 'Redundant with Task #55. Consolidate: Mohammad intakes Dr. Ziad’s keynote slides directly into the master screen deck.',
+        notes: 'OVERLAPPING TASK: Merge directly into Task #55 screen presentation workflow.'
+      },
+
+      // GROUP 4: Production & Print Procurement (Shaaban Deliverables)
+      {
+        id: 35, group: 'g4', workstream: 'Design',
+        task: 'Check names, titles, logos and printed content',
+        main: 'Mohammad', support: 'Dana', deadline: 'Before production', deliverable: 'Correct content',
+        status: 'In Progress', isDuplicate: false, duplicateNote: '',
+        notes: 'Proofread all 70 graduate names, 15 stakeholder titles, and dignitary names to prevent spelling reprints.'
+      },
+      {
+        id: 36, group: 'g4', workstream: 'Design',
+        task: 'Submit final designs to Shaaban',
+        main: 'Mohammad', support: 'Dana', deadline: 'Before production', deliverable: 'Print-ready files',
+        status: 'Not started', isDuplicate: false, duplicateNote: '',
+        notes: 'Dispatch high-res vector PDFs with 3mm bleed, CMYK curves, and die-cut lines to vendor Shaaban.'
+      },
+      {
+        id: 37, group: 'g4', workstream: 'Printing',
+        task: 'Prepare samples/mock-ups where applicable',
+        main: 'Shaaban', support: 'Mohammad', deadline: 'Before production', deliverable: 'Samples',
+        status: 'In Progress', isDuplicate: false, duplicateNote: '',
+        notes: 'Shaaban must submit a physical prototype of the 17x24cm acrylic/wood plaque and embossed leather sleeve.'
+      },
+      {
+        id: 38, group: 'g4', workstream: 'Printing',
+        task: 'Produce all approved event materials',
+        main: 'Shaaban', support: 'Mohammad', deadline: 'Before delivery', deliverable: 'Completed materials',
+        status: 'Duplicate', isDuplicate: true, duplicateNote: 'Redundant umbrella placeholder. Track individual items #39-#47 with vendor Shaaban directly.',
+        notes: 'OVERLAPPING TASK: Drop as summary line; enforce milestone progress on items #39 through #47.'
+      },
+      {
+        id: 39, group: 'g4', workstream: 'Printing',
+        task: 'Produce 4 appreciation plaques (17x24 cm)',
+        main: 'Shaaban', support: 'Mohammad', deadline: 'Before delivery', deliverable: '4 plaques',
+        status: 'In Fabrication', isDuplicate: false, duplicateNote: '',
+        notes: 'Word doc specs: Custom 17x24cm acrylic block mounted in natural angled wooden base with custom gift box.'
+      },
+      {
+        id: 40, group: 'g4', workstream: 'Printing',
+        task: 'Produce 15 certificates of appreciation',
+        main: 'Shaaban', support: 'Mohammad', deadline: 'Before delivery', deliverable: '15 certificates',
+        status: 'In Fabrication', isDuplicate: false, duplicateNote: '',
+        notes: 'Word doc specs: Premium A4 color print with dark brown leather sleeve embossed with GJU and EJIM logos.'
+      },
+      {
+        id: 41, group: 'g4', workstream: 'Printing',
+        task: 'Produce 4 roll-up banners',
+        main: 'Shaaban', support: 'Mohammad', deadline: 'Before delivery', deliverable: '4 roll-ups',
+        status: 'In Fabrication', isDuplicate: false, duplicateNote: '',
+        notes: 'Word doc specs: 85x200cm roll-ups for entrance guidance, branding visibility, and photo-op backdrop.'
+      },
+      {
+        id: 42, group: 'g4', workstream: 'Printing',
+        task: 'Produce 2 registration desk signs',
+        main: 'Shaaban', support: 'Mohammad', deadline: 'Before delivery', deliverable: '2 signs',
+        status: 'In Fabrication', isDuplicate: false, duplicateNote: '',
+        notes: 'Word doc specs: Rigid A4/A3 foamboard table signs featuring QR codes for digital agenda download.'
+      },
+      {
+        id: 43, group: 'g4', workstream: 'Printing',
+        task: 'Produce 18 name badges',
+        main: 'Shaaban', support: 'Mohammad', deadline: 'Before delivery', deliverable: '18 badges',
+        status: 'In Fabrication', isDuplicate: false, duplicateNote: '',
+        notes: 'Word doc specs: Badges with branded neck lanyards and transparent PVC pouches for EJIM team and GJU leaders.'
+      },
+      {
+        id: 44, group: 'g4', workstream: 'Printing',
+        task: 'Produce 180 event program agendas',
+        main: 'Shaaban', support: 'Mohammad', deadline: 'Before delivery', deliverable: '180 agendas',
+        status: 'In Fabrication', isDuplicate: false, duplicateNote: '',
+        notes: 'Word doc specs: 1-pager A4 single sheet printed on 250gsm matte paper outlining the ceremony schedule.'
+      },
+      {
+        id: 45, group: 'g4', workstream: 'Printing',
+        task: 'Produce 70 participant certificates',
+        main: 'Shaaban', support: 'Mohammad', deadline: 'Before delivery', deliverable: '70 certificates',
+        status: 'In Fabrication', isDuplicate: false, duplicateNote: '',
+        notes: 'Word doc specs: A4 certificates inside branded embossed leather presentation sleeves for graduates.'
+      },
+      {
+        id: 46, group: 'g4', workstream: 'Printing',
+        task: 'Produce 150 tote bags with cork and project logos',
+        main: 'Shaaban', support: 'Mohammad', deadline: 'Before delivery', deliverable: '150 bags',
+        status: 'In Fabrication', isDuplicate: false, duplicateNote: '',
+        notes: 'Word doc specs: Gray felt bag with natural cork bottom accent and screen-printed project logos.'
+      },
+      {
+        id: 47, group: 'g4', workstream: 'Printing',
+        task: 'Produce 100 giveaways with project logos',
+        main: 'Shaaban', support: 'Mohammad / Dana', deadline: 'Before delivery', deliverable: '100 giveaways',
+        status: 'In Fabrication', isDuplicate: false, duplicateNote: '',
+        notes: 'Word doc specs: VIP gift set in hard black presentation box containing metal water bottle, notebook with metal clasp, and pen.'
+      },
+      {
+        id: 48, group: 'g4', workstream: 'Printing',
+        task: 'Ensure professional production and finishing quality',
+        main: 'Shaaban', support: 'Mohammad', deadline: 'Before delivery', deliverable: 'Quality production',
+        status: 'Ongoing', isDuplicate: false, duplicateNote: '',
+        notes: 'Mohammad conducts print-shop inspection for clean laser edge-cutting, binding, and color registration.'
+      },
+      {
+        id: 49, group: 'g4', workstream: 'Printing',
+        task: 'Correct defective/incorrect materials',
+        main: 'Shaaban', support: 'Mohammad / Dana', deadline: 'If required', deliverable: 'Corrected materials',
+        status: 'Contingency', isDuplicate: false, duplicateNote: '',
+        notes: 'Mandatory 24-hour turnaround buffer clause with Shaaban for any defective or misprinted certificates.'
+      },
+
+      // GROUP 5: Receiving, Inventory & Packing
+      {
+        id: 50, group: 'g5', workstream: 'Materials',
+        task: 'Receive all materials from Shaaban',
+        main: 'Dana', support: 'Mohammad', deadline: '8–9 Oct', deliverable: 'Materials received',
+        status: 'Pending', isDuplicate: false, duplicateNote: '',
+        notes: 'Logistics receiving dock intake at venue/office with vendor delivery invoice sign-off.'
+      },
+      {
+        id: 51, group: 'g5', workstream: 'Materials',
+        task: 'Check quantities against TOR',
+        main: 'Dana', support: 'Mohammad', deadline: '8–9 Oct', deliverable: 'Inventory check',
+        status: 'Pending', isDuplicate: false, duplicateNote: '',
+        notes: 'Count audit: 4 plaques, 15+70 certs, 4 roll-ups, 2 signs, 18 badges, 180 agendas, 150 bags, 100 VIP sets.'
+      },
+      {
+        id: 71, group: 'g5', workstream: 'Giveaways',
+        task: 'Verify giveaway quantities and branding',
+        main: 'Dana', support: 'Mohammad', deadline: '8–9 Oct', deliverable: 'Quantity/quality check',
+        status: 'Duplicate', isDuplicate: true, duplicateNote: 'Redundant with Task #51. Execute VIP gift and bag count simultaneously during the master 8-9 Oct inventory check.',
+        notes: 'OVERLAPPING TASK: Merge fully into the Task #51 receiving checklist.'
+      },
+      {
+        id: 52, group: 'g5', workstream: 'Materials',
+        task: 'Check names and printed information on received stock',
+        main: 'Mohammad', support: 'Dana', deadline: '8–9 Oct', deliverable: 'Accuracy check',
+        status: 'Duplicate', isDuplicate: true, duplicateNote: 'Redundant with Task #35 pre-print validation. Treat as a 5-minute spot-check on box opening.',
+        notes: 'OVERLAPPING TASK: Spot-check randomly; pre-production Task #35 is the true quality gate.'
+      },
+      {
+        id: 53, group: 'g5', workstream: 'Materials',
+        task: 'Organize and pack event materials',
+        main: 'Hebah', support: 'Sara', deadline: '9-Oct', deliverable: 'Packed materials',
+        status: 'Not started', isDuplicate: false, duplicateNote: '',
+        notes: 'Sara and Hebah bundle 150 participant kits (bag + agenda) and separate VIP gift boxes into marked transport bins.'
+      },
+
+      // GROUP 6: Venue & AV Engineering
+      {
+        id: 9, group: 'g6', workstream: 'Venue',
+        task: 'Confirm stage requirements',
+        main: 'Dana', support: 'Mohammad', deadline: 'Before event', deliverable: 'Stage setup',
+        status: 'In Progress', isDuplicate: false, duplicateNote: '',
+        notes: 'Word doc dimensions: Hall 1 (H30 x W21m) or Hall 2 (H22 x W21m). Check podium, backdrop, and stage riser width.'
+      },
+      {
+        id: 12, group: 'g6', workstream: 'Venue',
+        task: 'Confirm complimentary meeting equipment',
+        main: 'Mohammad', support: 'Dana', deadline: 'Before event', deliverable: 'Equipment checklist',
+        status: 'In Progress', isDuplicate: false, duplicateNote: '',
+        notes: 'Verify hotel provides easels for roll-ups, registration tables, extension cables, and staging furniture.'
+      },
+      {
+        id: 54, group: 'g6', workstream: 'AV',
+        task: 'Define LED screen requirements',
+        main: 'Mohammad', support: 'Dana + Venue', deadline: 'Before event', deliverable: 'LED specification',
+        status: 'In Progress', isDuplicate: false, duplicateNote: '',
+        notes: 'Hotel tech specs: 1x Main LED (8x4m), 2x Pillar LEDs (1x3m), 2x Pillar LEDs (1x2m) with video processor.'
+      },
+      {
+        id: 56, group: 'g6', workstream: 'AV',
+        task: 'Confirm professional sound system',
+        main: 'Mohammad', support: 'Venue', deadline: 'Before event', deliverable: 'Sound system',
+        status: 'In Progress', isDuplicate: false, duplicateNote: '',
+        notes: 'Word doc specs: Hotel venue sound system, line-array speakers, digital audio mixer, and XLR cabling.'
+      },
+      {
+        id: 57, group: 'g6', workstream: 'AV',
+        task: 'Confirm microphones',
+        main: 'Mohammad', support: 'Venue / Supplier', deadline: 'Before event', deliverable: 'Tested microphones',
+        status: 'In Progress', isDuplicate: false, duplicateNote: '',
+        notes: 'Verify podium gooseneck mic, 2 wireless handheld mics for Q&A, and lapel/headset mics with fresh backup batteries.'
+      },
+      {
+        id: 58, group: 'g6', workstream: 'AV',
+        task: 'Confirm projector and screen',
+        main: 'Mohammad', support: 'Venue / Supplier', deadline: 'Before event', deliverable: 'Projector setup',
+        status: 'In Progress', isDuplicate: false, duplicateNote: '',
+        notes: 'Secondary visual relay monitor / projector setup for overflow seating in secondary wing.'
+      },
+      {
+        id: 59, group: 'g6', workstream: 'AV',
+        task: 'Conduct technical testing',
+        main: 'Mohammad', support: 'Venue', deadline: '9-Oct', deliverable: 'Technical test',
+        status: 'Pending', isDuplicate: false, duplicateNote: '',
+        notes: 'Live on-site test: calibrate slide deck aspect ratios, test video sound levels, and run rehearsal with hotel engineer.'
+      },
+      {
+        id: 75, group: 'g6', workstream: 'Event Day',
+        task: 'Final technical inspection',
+        main: 'Mohammad', support: 'Technician', deadline: '10-Oct (07:30)', deliverable: 'AV ready',
+        status: 'Pending', isDuplicate: false, duplicateNote: '',
+        notes: 'Word doc item: Qualified technical personnel on standby. Mohammad runs final 60-min pre-event systems live check.'
+      },
+
+      // GROUP 7: Registration Desk & Attendance
+      {
+        id: 63, group: 'g7', workstream: 'Registration',
+        task: 'Prepare registration desk materials',
+        main: 'Hebah', support: 'Sara', deadline: '9-Oct', deliverable: 'Registration package',
+        status: 'Not started', isDuplicate: false, duplicateNote: '',
+        notes: 'Set up badge alphabetical trays, 2 QR signs, printed check-in sheets, and 180 copies of the printed agenda.'
+      },
+      {
+        id: 74, group: 'g7', workstream: 'Event Day',
+        task: 'Prepare registration sheet',
+        main: 'Hebah', support: 'Sara', deadline: '10-Oct', deliverable: 'Registration sheet',
+        status: 'Duplicate', isDuplicate: true, duplicateNote: 'Redundant with Task #63. Registration sheets must be finalized on Oct 9, never on the morning of the ceremony.',
+        notes: 'OVERLAPPING TASK: Fold into Oct 9 setup; print roster 24h prior.'
+      },
+      {
+        id: 64, group: 'g7', workstream: 'Registration',
+        task: 'Manage participant registration',
+        main: 'Hebah', support: 'Sara', deadline: '10-Oct (08:30)', deliverable: 'Guest check-in',
+        status: 'Not started', isDuplicate: false, duplicateNote: '',
+        notes: 'Sara and Hebah welcome guests, scan QR / verify names, issue lanyards, and hand out tote bags.'
+      },
+      {
+        id: 65, group: 'g7', workstream: 'Registration',
+        task: 'Handle attendance / update late arrivals',
+        main: 'Hebah', support: 'Sara', deadline: '10-Oct', deliverable: 'Updated attendance',
+        status: 'Duplicate', isDuplicate: true, duplicateNote: 'Redundant with Task #64. Part of the continuous check-in process executed by Hebah and Sara.',
+        notes: 'OVERLAPPING TASK: Run as part of the live registration desk workflow.'
+      },
+
+      // GROUP 8: Event Wrap-Up & Reporting
+      {
+        id: 82, group: 'g8', workstream: 'Close-out',
+        task: 'Supervise AV dismantling',
+        main: 'Mohammad', support: 'Supplier', deadline: 'After event (10-Oct)', deliverable: 'AV dismantled',
+        status: 'Pending', isDuplicate: false, duplicateNote: '',
+        notes: 'Mohammad oversees stage dismantling, LED panel de-rigging, and hotel equipment handover without venue penalties.'
+      },
+      {
+        id: 84, group: 'g8', workstream: 'Close-out',
+        task: 'Final event report',
+        main: 'Mohammad', support: '—', deadline: 'After event', deliverable: 'Final report',
+        status: 'Pending', isDuplicate: false, duplicateNote: '',
+        notes: 'Compile AV technical report, attendance statistics, supplier evaluation, and high-res media archive.'
+      }
+    ];
+
+    let currentTab = 'master';
+    let currentPersonFilter = 'ALL';
+    let editingTaskId = null;
+    let pendingDeleteId = null;
+
+    function switchTab(tabId) {
+      currentTab = tabId;
+
+      // Update tab buttons UI
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-white', 'text-slate-900', 'shadow-sm', 'border-slate-300');
+        btn.classList.add('text-slate-600', 'border-transparent');
+      });
+
+      const activeBtn = document.getElementById(`tab-${tabId}`);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-white', 'text-slate-900', 'shadow-sm', 'border-slate-300');
+        activeBtn.classList.remove('text-slate-600', 'border-transparent');
+      }
+
+      const spreadView = document.getElementById('spreadsheetView');
+      const appsView = document.getElementById('appsScriptView');
+
+      if (tabId === 'apps-script') {
+        spreadView.classList.add('hidden');
+        appsView.classList.remove('hidden');
+      } else {
+        appsView.classList.add('hidden');
+        spreadView.classList.remove('hidden');
+        renderActiveSheet();
+      }
+    }
+
+    function setPersonFilter(person) {
+      currentPersonFilter = person;
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('bg-slate-900', 'text-white', 'font-semibold');
+        btn.classList.add('text-slate-600', 'font-medium');
+      });
+
+      const activeBtn = document.getElementById(`filter-${person}`);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-slate-900', 'text-white', 'font-semibold');
+        activeBtn.classList.remove('text-slate-600', 'font-medium');
+      }
+
+      renderActiveSheet();
+    }
+
+    function updateAssigneeFilterCounts() {
+      const allCount = TASKS_DATA.length;
+      const mohammadCount = TASKS_DATA.filter(t => t.main.includes('Mohammad') || t.support.includes('Mohammad')).length;
+      const saraCount = TASKS_DATA.filter(t => t.main.includes('Sara') || t.support.includes('Sara')).length;
+      const jointCount = TASKS_DATA.filter(t => 
+        (t.main.includes('Mohammad') && t.support.includes('Sara')) || 
+        (t.main.includes('Sara') && t.support.includes('Mohammad'))
+      ).length;
+
+      document.getElementById('count-ALL').textContent = allCount;
+      document.getElementById('count-Mohammad').textContent = mohammadCount;
+      document.getElementById('count-Sara').textContent = saraCount;
+      document.getElementById('count-Joint').textContent = jointCount;
+
+      // Update tab badges
+      const masterBadge = document.querySelector('#tab-master span:last-child');
+      if (masterBadge) masterBadge.textContent = allCount;
+
+      Object.keys(GROUPS).forEach(gid => {
+        const tabBadge = document.querySelector(`#tab-${gid} span:last-child`);
+        if (tabBadge) {
+          tabBadge.textContent = TASKS_DATA.filter(t => t.group === gid).length;
+        }
+      });
+    }
+
+    function renderActiveSheet() {
+      const tbody = document.getElementById('tableBody');
+      const titleEl = document.getElementById('sheetTitle');
+      const subTitleEl = document.getElementById('sheetSubtitle');
+      const statsEl = document.getElementById('sheetStats');
+      const displayedCountEl = document.getElementById('displayedCount');
+      const highlightDupes = document.getElementById('chkHighlightDuplicates').checked;
+
+      updateAssigneeFilterCounts();
+
+      // Filter tasks by active tab
+      let tasks = TASKS_DATA;
+      if (currentTab !== 'master') {
+        tasks = tasks.filter(t => t.group === currentTab);
+      }
+
+      // Filter tasks by person
+      if (currentPersonFilter === 'Mohammad') {
+        tasks = tasks.filter(t => t.main.includes('Mohammad') || t.support.includes('Mohammad'));
+      } else if (currentPersonFilter === 'Sara') {
+        tasks = tasks.filter(t => t.main.includes('Sara') || t.support.includes('Sara'));
+      } else if (currentPersonFilter === 'Joint') {
+        tasks = tasks.filter(t => 
+          (t.main.includes('Mohammad') && t.support.includes('Sara')) || 
+          (t.main.includes('Sara') && t.support.includes('Mohammad'))
+        );
+      }
+
+      // Update banner text
+      if (currentTab === 'master') {
+        titleEl.textContent = '0. Master Chronological Tracker';
+        subTitleEl.textContent = 'Complete unified operational tracker (All 8 Workstream Groups consolidated).';
+      } else {
+        const grp = GROUPS[currentTab];
+        titleEl.textContent = grp.title;
+        subTitleEl.textContent = grp.desc;
+      }
+
+      // Update stats tags
+      const dupCount = tasks.filter(t => t.isDuplicate).length;
+      statsEl.innerHTML = `
+        <span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-semibold">${tasks.length} Rows</span>
+        ${dupCount > 0 ? `<span class="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 font-semibold">${dupCount} Redundancies</span>` : ''}
+      `;
+
+      displayedCountEl.textContent = tasks.length;
+
+      // Build HTML rows
+      tbody.innerHTML = '';
+      if (tasks.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" class="py-12 text-center text-slate-400">
+              <i class="ph ph-folder-open text-3xl mb-2 inline-block"></i>
+              <p>No tasks match the active filters.</p>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tasks.forEach((t, index) => {
+        const grp = GROUPS[t.group];
+        const isDupe = t.isDuplicate && highlightDupes;
+        
+        let rowClass = isDupe ? 'bg-rose-50/70 hover:bg-rose-100/70 border-l-4 border-l-rose-500' : 'hover:bg-slate-50';
+
+        // Mohammad and Sara badge highlighting
+        const formatAssignee = (name) => {
+          if (!name || name === '—') return `<span class="text-slate-400">—</span>`;
+          if (name.includes('Mohammad')) {
+            return `<span class="font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">${name}</span>`;
+          }
+          if (name.includes('Sara')) {
+            return `<span class="font-semibold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">${name}</span>`;
+          }
+          return `<span class="text-slate-600">${name}</span>`;
+        };
+
+        // Status pill
+        let statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700">${t.status}</span>`;
+        if (t.status === 'Completed') {
+          statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-100 text-emerald-800">Completed</span>`;
+        } else if (t.status === 'In Progress' || t.status === 'In Fabrication') {
+          statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-medium bg-sky-100 text-sky-800">${t.status}</span>`;
+        } else if (t.status === 'Duplicate') {
+          statusBadge = `<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-200 text-rose-800">Duplicate</span>`;
+        }
+
+        const tr = document.createElement('tr');
+        tr.className = `${rowClass} transition-colors`;
+        tr.innerHTML = `
+          <td class="py-2.5 px-3 text-center font-bold text-slate-500">${t.id}</td>
+          <td class="py-2.5 px-3 font-medium">
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${grp.badgeBg}">
+              ${grp.badge}
+            </span>
+          </td>
+          <td class="py-2.5 px-4">
+            <div class="font-semibold text-slate-900">${t.task}</div>
+            ${isDupe ? `<div class="mt-1 text-[11px] text-rose-700 font-medium bg-rose-100/80 p-1.5 rounded border border-rose-200"><i class="ph ph-warning-circle mr-1"></i>${t.duplicateNote}</div>` : ''}
+          </td>
+          <td class="py-2.5 px-3">${formatAssignee(t.main)}</td>
+          <td class="py-2.5 px-3">${formatAssignee(t.support)}</td>
+          <td class="py-2.5 px-3 text-slate-600 font-medium">${t.deadline}</td>
+          <td class="py-2.5 px-3">${statusBadge}</td>
+          <td class="py-2.5 px-4 text-slate-600 leading-relaxed text-[11px]">
+            ${t.notes}
+          </td>
+          <td class="py-2.5 px-3 text-center">
+            <div class="flex items-center justify-center space-x-1.5">
+              <button onclick="openEditTaskModal(${t.id})" title="Edit Task" class="p-1 rounded text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                <i class="ph ph-pencil-simple text-base"></i>
+              </button>
+              <button onclick="openDeleteModal(${t.id})" title="Delete Task" class="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors">
+                <i class="ph ph-trash text-base"></i>
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function openAddTaskModal() {
+      editingTaskId = null;
+      document.getElementById('modalTitle').textContent = 'Add New Task';
+      document.getElementById('modalIconContainer').className = 'w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-lg';
+      document.getElementById('modalIcon').className = 'ph ph-plus-bold';
+      document.getElementById('btnSubmitTask').innerHTML = `<i class="ph ph-plus-circle text-sm"></i><span>Create Task</span>`;
+
+      // Suggest next ID number
+      const maxId = TASKS_DATA.reduce((max, t) => Math.max(max, Number(t.id) || 0), 0);
+      document.getElementById('formIdNum').value = maxId + 1;
+      document.getElementById('formIdNum').removeAttribute('readonly');
+
+      // Pre-select group if filtered to one group
+      if (currentTab !== 'master' && GROUPS[currentTab]) {
+        document.getElementById('formGroup').value = currentTab;
+      } else {
+        document.getElementById('formGroup').value = 'g1';
+      }
+
+      document.getElementById('formTaskId').value = '';
+      document.getElementById('formTaskTitle').value = '';
+      document.getElementById('formMain').value = currentPersonFilter === 'Sara' ? 'Sara' : 'Mohammad';
+      document.getElementById('formSupport').value = '—';
+      document.getElementById('formDeadline').value = 'Before event';
+      document.getElementById('formStatus').value = 'In Progress';
+      document.getElementById('formDeliverable').value = '';
+      document.getElementById('formNotes').value = '';
+      document.getElementById('formIsDuplicate').checked = false;
+      document.getElementById('formDuplicateNote').value = '';
+      toggleDuplicateNoteField();
+
+      document.getElementById('taskModal').classList.remove('hidden');
+    }
+
+    function openEditTaskModal(taskId) {
+      const task = TASKS_DATA.find(t => t.id === taskId);
+      if (!task) return;
+
+      editingTaskId = taskId;
+      document.getElementById('modalTitle').textContent = `Edit Task #${task.id}`;
+      document.getElementById('modalIconContainer').className = 'w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-lg';
+      document.getElementById('modalIcon').className = 'ph ph-pencil-simple';
+      document.getElementById('btnSubmitTask').innerHTML = `<i class="ph ph-floppy-disk text-sm"></i><span>Save Changes</span>`;
+
+      document.getElementById('formTaskId').value = task.id;
+      document.getElementById('formIdNum').value = task.id;
+      document.getElementById('formGroup').value = task.group;
+      document.getElementById('formTaskTitle').value = task.task;
+      document.getElementById('formMain').value = task.main;
+      document.getElementById('formSupport').value = task.support;
+      document.getElementById('formDeadline').value = task.deadline;
+      document.getElementById('formStatus').value = task.status;
+      document.getElementById('formDeliverable').value = task.deliverable;
+      document.getElementById('formNotes').value = task.notes;
+      document.getElementById('formIsDuplicate').checked = !!task.isDuplicate;
+      document.getElementById('formDuplicateNote').value = task.duplicateNote || '';
+      toggleDuplicateNoteField();
+
+      document.getElementById('taskModal').classList.remove('hidden');
+    }
+
+    function closeTaskModal() {
+      document.getElementById('taskModal').classList.add('hidden');
+      editingTaskId = null;
+    }
+
+    function toggleDuplicateNoteField() {
+      const isChecked = document.getElementById('formIsDuplicate').checked;
+      const container = document.getElementById('duplicateNoteContainer');
+      if (isChecked) {
+        container.classList.remove('hidden');
+      } else {
+        container.classList.add('hidden');
+      }
+    }
+
+    function handleTaskFormSubmit(e) {
+      e.preventDefault();
+
+      const idNum = parseInt(document.getElementById('formIdNum').value, 10);
+      const group = document.getElementById('formGroup').value;
+      const taskTitle = document.getElementById('formTaskTitle').value.trim();
+      const mainResp = document.getElementById('formMain').value.trim();
+      const supportResp = document.getElementById('formSupport').value.trim() || '—';
+      const deadline = document.getElementById('formDeadline').value.trim();
+      const status = document.getElementById('formStatus').value;
+      const deliverable = document.getElementById('formDeliverable').value.trim();
+      const notes = document.getElementById('formNotes').value.trim();
+      const isDuplicate = document.getElementById('formIsDuplicate').checked;
+      const duplicateNote = document.getElementById('formDuplicateNote').value.trim();
+
+      const taskDataObj = {
+        id: idNum,
+        group: group,
+        workstream: GROUPS[group].badge,
+        task: taskTitle,
+        main: mainResp,
+        support: supportResp,
+        deadline: deadline,
+        status: isDuplicate && status !== 'Duplicate' ? 'Duplicate' : status,
+        deliverable: deliverable || taskTitle,
+        notes: notes,
+        isDuplicate: isDuplicate,
+        duplicateNote: isDuplicate ? (duplicateNote || 'Overlapping deliverable') : ''
+      };
+
+      if (editingTaskId !== null) {
+        // Update existing task
+        const index = TASKS_DATA.findIndex(t => t.id === editingTaskId);
+        if (index !== -1) {
+          TASKS_DATA[index] = taskDataObj;
+          showToast(`Task #${idNum} updated successfully!`, 'emerald');
+        }
+      } else {
+        // Check for duplicate ID
+        const exists = TASKS_DATA.some(t => t.id === idNum);
+        if (exists) {
+          showToast(`Task ID #${idNum} already exists. Please choose a different number.`, 'rose');
+          return;
+        }
+        TASKS_DATA.push(taskDataObj);
+        showToast(`Task #${idNum} added successfully!`, 'emerald');
+      }
+
+      closeTaskModal();
+      renderActiveSheet();
+    }
+
+    function openDeleteModal(taskId) {
+      const task = TASKS_DATA.find(t => t.id === taskId);
+      if (!task) return;
+
+      pendingDeleteId = taskId;
+      document.getElementById('deleteModalText').textContent = `Are you sure you want to delete Task #${task.id} ("${task.task}")? This cannot be undone.`;
+      document.getElementById('deleteModal').classList.remove('hidden');
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('deleteModal').classList.add('hidden');
+      pendingDeleteId = null;
+    }
+
+    function executeDeleteTask() {
+      if (pendingDeleteId === null) return;
+      const deletedId = pendingDeleteId;
+      TASKS_DATA = TASKS_DATA.filter(t => t.id !== pendingDeleteId);
+      closeDeleteModal();
+      renderActiveSheet();
+      showToast(`Task #${deletedId} was permanently deleted.`, 'slate');
+    }
+
+    function showToast(message, color = 'emerald') {
+      const toast = document.getElementById('toastNotification');
+      const toastMsg = document.getElementById('toastMsg');
+      const toastIcon = document.getElementById('toastIcon');
+
+      toastMsg.textContent = message;
+      if (color === 'emerald') {
+        toastIcon.className = 'ph ph-check-circle text-emerald-400 text-base';
+      } else if (color === 'rose') {
+        toastIcon.className = 'ph ph-warning-circle text-rose-400 text-base';
+      } else {
+        toastIcon.className = 'ph ph-info text-blue-400 text-base';
+      }
+
+      toast.classList.remove('translate-y-12', 'opacity-0', 'pointer-events-none');
+      setTimeout(() => {
+        toast.classList.add('translate-y-12', 'opacity-0', 'pointer-events-none');
+      }, 2600);
+    }
+
+    function exportWorkbook() {
+      const wb = XLSX.utils.book_new();
+
+      // Headers for all sheets
+      const headers = [
+        "Task #",
+        "Workstream Group",
+        "Task / Deliverable",
+        "Main Responsible",
+        "Support",
+        "Deadline / Timing",
+        "Status",
+        "Deliverable Name",
+        "Operational Notes & Specs",
+        "Redundancy Note"
+      ];
+
+      // Helper function to convert task items to row array
+      const mapTaskToRow = (t) => [
+        t.id,
+        GROUPS[t.group].title,
+        t.task,
+        t.main,
+        t.support,
+        t.deadline,
+        t.status,
+        t.deliverable,
+        t.notes,
+        t.isDuplicate ? t.duplicateNote : "Active / Primary"
+      ];
+
+      // 1. Create Master Chronological Sheet
+      const masterRows = [headers, ...TASKS_DATA.map(mapTaskToRow)];
+      const masterWs = XLSX.utils.aoa_to_sheet(masterRows);
+      
+      // Auto-fit column widths
+      masterWs['!cols'] = [
+        { wch: 8 },  // ID
+        { wch: 28 }, // Group
+        { wch: 42 }, // Task
+        { wch: 18 }, // Main
+        { wch: 18 }, // Support
+        { wch: 20 }, // Deadline
+        { wch: 16 }, // Status
+        { wch: 22 }, // Deliverable
+        { wch: 55 }, // Notes
+        { wch: 45 }  // Redundancy
+      ];
+      XLSX.utils.book_append_sheet(wb, masterWs, "Master Schedule");
+
+      // 2. Create individual sheet for each group
+      Object.keys(GROUPS).forEach(groupId => {
+        const groupInfo = GROUPS[groupId];
+        const groupTasks = TASKS_DATA.filter(t => t.group === groupId);
+        const groupRows = [headers, ...groupTasks.map(mapTaskToRow)];
+        const groupWs = XLSX.utils.aoa_to_sheet(groupRows);
+        groupWs['!cols'] = masterWs['!cols'];
+
+        // Google Sheets sheet names max 30 chars
+        const cleanSheetName = groupInfo.title.replace('Group ', '').substring(0, 30);
+        XLSX.utils.book_append_sheet(wb, groupWs, cleanSheetName);
+      });
+
+      // 3. Write file and trigger direct download
+      XLSX.writeFile(wb, "EJIM_Closing_Ceremony_Master_Tracker.xlsx");
+    }
+
+    function copyAppsScript() {
+      const code = document.getElementById('appsScriptPre').innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        const btn = document.getElementById('btnCopyScript');
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = `<i class="ph ph-check"></i><span>Copied to Clipboard!</span>`;
+        btn.classList.replace('bg-indigo-600', 'bg-emerald-600');
+        setTimeout(() => {
+          btn.innerHTML = originalHtml;
+          btn.classList.replace('bg-emerald-600', 'bg-indigo-600');
+        }, 2000);
+      });
+    }
+
+    // Initial render
+    window.addEventListener('DOMContentLoaded', () => {
+      renderActiveSheet();
+    });
+  </script>
+</body>
+</html>
